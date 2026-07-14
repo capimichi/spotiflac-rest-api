@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -115,6 +116,7 @@ type DownloadRequest struct {
 	AlbumName      string `json:"album_name"`
 	AlbumArtist    string `json:"album_artist"`
 	ReleaseDate    string `json:"release_date"`
+	SpotifyID      string `json:"spotify_id"`
 }
 
 func main() {
@@ -309,8 +311,18 @@ func executeDownload(req DownloadRequest, progress progressCallback) ([]string, 
 
 	if req.ISRC != "" && req.TrackName != "" && req.ArtistName != "" {
 		fmt.Printf("Using direct metadata: %s - %s (ISRC: %s)\n", req.ArtistName, req.TrackName, req.ISRC)
+		
+		spotifyID := req.SpotifyID
+		if spotifyID == "" && req.URL != "" {
+			parts := strings.Split(req.URL, "/")
+			if len(parts) > 0 {
+				lastPart := parts[len(parts)-1]
+				spotifyID = strings.Split(lastPart, "?")[0]
+			}
+		}
+
 		tracks = append(tracks, trackMetadata{
-			SpotifyID:   "",
+			SpotifyID:   spotifyID,
 			TrackName:   req.TrackName,
 			ArtistName:  req.ArtistName,
 			AlbumName:   req.AlbumName,
@@ -321,7 +333,7 @@ func executeDownload(req DownloadRequest, progress progressCallback) ([]string, 
 			TotalTracks: 1,
 			TotalDiscs:  1,
 			UPC:         req.ISRC,
-			SpotifyURL:  "",
+			SpotifyURL:  req.URL,
 		})
 	} else {
 		if req.URL == "" {
