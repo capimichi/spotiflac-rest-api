@@ -104,11 +104,17 @@ func generateID() string {
 var store = NewTaskStore()
 
 type DownloadRequest struct {
-	URL            string `json:"url" binding:"required"`
+	URL            string `json:"url"`
 	Service        string `json:"service"` // "qobuz", "tidal", "amazon"
 	Quality        string `json:"quality"` // Qobuz: "6" (Lossless), "7"/"27" (Hi-Res) | Tidal: "HI_RES", "LOSSLESS"
 	OutputDir      string `json:"output_dir"`
 	FilenameFormat string `json:"filename_format"`
+	ISRC           string `json:"isrc"`
+	TrackName      string `json:"track_name"`
+	ArtistName     string `json:"artist_name"`
+	AlbumName      string `json:"album_name"`
+	AlbumArtist    string `json:"album_artist"`
+	ReleaseDate    string `json:"release_date"`
 }
 
 func main() {
@@ -299,38 +305,59 @@ type trackMetadata struct {
 type progressCallback func(currentTrack string, completed, total int)
 
 func executeDownload(req DownloadRequest, progress progressCallback) ([]string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
-	defer cancel()
-
-	fmt.Printf("Fetching Spotify metadata for URL: %s\n", req.URL)
-	data, err := backend.GetFilteredSpotifyData(ctx, req.URL, false, 0, ", ", nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch Spotify metadata: %w", err)
-	}
-
 	var tracks []trackMetadata
 
-	switch res := data.(type) {
-	case backend.TrackResponse:
-		tracks = append(tracks, mapTrackMetadata(res.Track))
+	if req.ISRC != "" && req.TrackName != "" && req.ArtistName != "" {
+		fmt.Printf("Using direct metadata: %s - %s (ISRC: %s)\n", req.ArtistName, req.TrackName, req.ISRC)
+		tracks = append(tracks, trackMetadata{
+			SpotifyID:   "",
+			TrackName:   req.TrackName,
+			ArtistName:  req.ArtistName,
+			AlbumName:   req.AlbumName,
+			AlbumArtist: req.AlbumArtist,
+			ReleaseDate: req.ReleaseDate,
+			TrackNumber: 1,
+			DiscNumber:  1,
+			TotalTracks: 1,
+			TotalDiscs:  1,
+			UPC:         req.ISRC,
+			SpotifyURL:  "",
+		})
+	} else {
+		if req.URL == "" {
+			return nil, fmt.Errorf("either 'url' or direct metadata ('isrc', 'track_name', 'artist_name') must be provided")
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
+		defer cancel()
 
-	case *backend.AlbumResponsePayload:
-		for _, item := range res.TrackList {
-			tracks = append(tracks, mapAlbumTrackMetadata(item, res.AlbumInfo.UPC))
+		fmt.Printf("Fetching Spotify metadata for URL: %s\n", req.URL)
+		data, err := backend.GetFilteredSpotifyData(ctx, req.URL, false, 0, ", ", nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch Spotify metadata: %w", err)
 		}
 
-	case *backend.PlaylistResponsePayload:
-		for _, item := range res.TrackList {
-			tracks = append(tracks, mapAlbumTrackMetadata(item, ""))
-		}
+		switch res := data.(type) {
+		case backend.TrackResponse:
+			tracks = append(tracks, mapTrackMetadata(res.Track))
 
-	case *backend.ArtistDiscographyPayload:
-		for _, item := range res.TrackList {
-			tracks = append(tracks, mapAlbumTrackMetadata(item, ""))
-		}
+		case *backend.AlbumResponsePayload:
+			for _, item := range res.TrackList {
+				tracks = append(tracks, mapAlbumTrackMetadata(item, res.AlbumInfo.UPC))
+			}
 
-	default:
-		return nil, fmt.Errorf("unsupported Spotify metadata response type: %T", data)
+		case *backend.PlaylistResponsePayload:
+			for _, item := range res.TrackList {
+				tracks = append(tracks, mapAlbumTrackMetadata(item, ""))
+			}
+
+		case *backend.ArtistDiscographyPayload:
+			for _, item := range res.TrackList {
+				tracks = append(tracks, mapAlbumTrackMetadata(item, ""))
+			}
+
+		default:
+			return nil, fmt.Errorf("unsupported Spotify metadata response type: %T", data)
+		}
 	}
 
 	total := len(tracks)
