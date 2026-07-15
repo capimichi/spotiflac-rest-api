@@ -307,6 +307,137 @@ type trackMetadata struct {
 type progressCallback func(currentTrack string, completed, total int)
 
 func executeDownload(req DownloadRequest, progress progressCallback) ([]string, error) {
+	// Direct URL handling for Tidal, Amazon, Qobuz
+	isTidal := strings.Contains(req.URL, "tidal.com")
+	isAmazon := strings.Contains(req.URL, "amazon.co.") || strings.Contains(req.URL, "amazon.com")
+	isQobuz := strings.Contains(req.URL, "qobuz.com")
+
+	if isTidal || isAmazon || isQobuz {
+		fmt.Printf("Direct URL detected: %s\n", req.URL)
+		var filename string
+		var dlErr error
+
+		trackName := req.TrackName
+		if trackName == "" {
+			trackName = "Unknown Track"
+		}
+		artistName := req.ArtistName
+		if artistName == "" {
+			artistName = "Unknown Artist"
+		}
+
+		if isQobuz {
+			qobuzID := extractQobuzTrackID(req.URL)
+			if qobuzID == "" {
+				return nil, fmt.Errorf("could not extract Qobuz track ID from URL: %s", req.URL)
+			}
+			isrcVal := "qobuz_" + qobuzID
+			fmt.Printf("Downloading directly from Qobuz track ID: %s\n", qobuzID)
+			
+			downloader := backend.NewQobuzDownloader()
+			filename, dlErr = downloader.DownloadTrackWithISRC(
+				isrcVal,
+				req.OutputDir,
+				req.Quality,
+				req.FilenameFormat,
+				false, // includeTrackNumber
+				1,     // position
+				trackName,
+				artistName,
+				req.AlbumName,
+				req.AlbumArtist,
+				req.ReleaseDate,
+				false, // useAlbumTrackNumber
+				"",    // spotifyCoverURL
+				true,  // embedMaxQualityCover
+				1,     // spotifyTrackNumber
+				1,     // spotifyDiscNumber
+				1,     // spotifyTotalTracks
+				1,     // spotifyTotalDiscs
+				"",    // copyright
+				"",    // publisher
+				"",    // composer
+				", ",  // metadataSeparator
+				"",    // spotifyURL
+				true,  // allowFallback
+				false, // useFirstArtistOnly
+				false, // useSingleGenre
+				false, // embedGenre
+			)
+		} else if isTidal {
+			fmt.Printf("Downloading directly from Tidal URL: %s\n", req.URL)
+			downloader := backend.NewTidalDownloader("")
+			filename, dlErr = downloader.DownloadByURL(
+				req.URL,
+				req.OutputDir,
+				req.Quality,
+				req.FilenameFormat,
+				false, // includeTrackNumber
+				1,     // position
+				trackName,
+				artistName,
+				req.AlbumName,
+				req.AlbumArtist,
+				req.ReleaseDate,
+				false, // useAlbumTrackNumber
+				"",    // spotifyCoverURL
+				true,  // embedMaxQualityCover
+				1,     // spotifyTrackNumber
+				1,     // spotifyDiscNumber
+				1,     // spotifyTotalTracks
+				1,     // spotifyTotalDiscs
+				"",    // copyright
+				"",    // publisher
+				"",    // composer
+				", ",  // metadataSeparator
+				req.ISRC,
+				"",    // spotifyURL
+				true,  // allowFallback
+				false, // useFirstArtistOnly
+				false, // useSingleGenre
+				false, // embedGenre
+			)
+		} else if isAmazon {
+			fmt.Printf("Downloading directly from Amazon URL: %s\n", req.URL)
+			downloader := backend.NewAmazonDownloader()
+			filename, dlErr = downloader.DownloadByURL(
+				req.URL,
+				req.OutputDir,
+				req.Quality,
+				req.FilenameFormat,
+				"", // playlistName
+				"", // playlistOwner
+				false, // includeTrackNumber
+				1,     // position
+				trackName,
+				artistName,
+				req.AlbumName,
+				req.AlbumArtist,
+				req.ReleaseDate,
+				"",    // coverURL
+				1,     // spotifyTrackNumber
+				1,     // spotifyDiscNumber
+				1,     // spotifyTotalTracks
+				true,  // embedMaxQualityCover
+				1,     // spotifyTotalDiscs
+				"",    // copyright
+				"",    // publisher
+				"",    // composer
+				", ",  // metadataSeparator
+				req.ISRC,
+				"",    // spotifyURL
+				false, // useFirstArtistOnly
+				false, // useSingleGenre
+				false, // embedGenre
+			)
+		}
+
+		if dlErr != nil {
+			return nil, dlErr
+		}
+		return []string{filename}, nil
+	}
+
 	var tracks []trackMetadata
 
 	if req.ISRC != "" && req.TrackName != "" && req.ArtistName != "" {
@@ -556,4 +687,42 @@ func mapAlbumTrackMetadata(t backend.AlbumTrackMetadata, upc string) trackMetada
 		SpotifyURL:         t.ExternalURL,
 		DurationMS:         t.DurationMS,
 	}
+}
+
+func extractQobuzTrackID(qobuzURL string) string {
+	// Pattern 1: track_id=12345
+	if strings.Contains(qobuzURL, "track_id=") {
+		parts := strings.Split(qobuzURL, "track_id=")
+		if len(parts) > 1 {
+			id := ""
+			for _, r := range parts[1] {
+				if r >= '0' && r <= '9' {
+					id += string(r)
+				} else {
+					break
+				}
+			}
+			if id != "" {
+				return id
+			}
+		}
+	}
+	// Pattern 2: /track/12345
+	if strings.Contains(qobuzURL, "/track/") {
+		parts := strings.Split(qobuzURL, "/track/")
+		if len(parts) > 1 {
+			id := ""
+			for _, r := range parts[1] {
+				if r >= '0' && r <= '9' {
+					id += string(r)
+				} else {
+					break
+				}
+			}
+			if id != "" {
+				return id
+			}
+		}
+	}
+	return ""
 }
