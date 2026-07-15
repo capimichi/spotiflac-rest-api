@@ -308,9 +308,9 @@ type progressCallback func(currentTrack string, completed, total int)
 
 func executeDownload(req DownloadRequest, progress progressCallback) ([]string, error) {
 	// Direct URL handling for Tidal, Amazon, Qobuz
-	isTidal := strings.Contains(req.URL, "tidal.com")
-	isAmazon := strings.Contains(req.URL, "amazon.co.") || strings.Contains(req.URL, "amazon.com")
-	isQobuz := strings.Contains(req.URL, "qobuz.com")
+	isTidal := strings.Contains(req.URL, "tidal.")
+	isAmazon := strings.Contains(req.URL, "amazon.")
+	isQobuz := strings.Contains(req.URL, "qobuz.")
 
 	if isTidal || isAmazon || isQobuz {
 		fmt.Printf("Direct URL detected: %s\n", req.URL)
