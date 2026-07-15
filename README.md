@@ -11,18 +11,26 @@ A lightweight REST API wrapper for the [SpotiFLAC](https://github.com/afkarxyz/S
 
 1. **Run the server**:
    ```bash
-   go run main.go
+   go run cmd/server/main.go
    ```
    By default, the server runs on port `8080`.
 
 2. **Change port (optional)**:
    ```bash
-   PORT=9000 go run main.go
+   PORT=9000 go run cmd/server/main.go
+   ```
+
+3. **Build the binary**:
+   ```bash
+   go build -o spotiflac-server cmd/server/main.go
+   ./spotiflac-server
    ```
 
 ---
 
 ## API Documentation
+
+Swagger UI is available at **`http://localhost:8080/swagger/index.html`** when the server is running. You can explore and test all endpoints interactively.
 
 ### 1. Health Check
 Checks if the API server is online and running.
@@ -53,7 +61,7 @@ Starts a download task in the background and returns a task ID immediately. This
   }
   ```
   * `service` options: `"qobuz"` (default), `"tidal"`, `"amazon"`
-  * `quality` options: 
+  * `quality` options:
     * Qobuz: `"6"` (16-bit Lossless, default), `"7"` / `"27"` (Hi-Res)
     * Tidal: `"LOSSLESS"` (default), `"HI_RES"`
 * **Response**:
@@ -112,3 +120,29 @@ Blocks until the entire download process (including tagging) is complete, then r
     ]
   }
   ```
+
+---
+
+## Project Structure
+
+```
+spotiflac-rest-api/
+├── cmd/server/main.go          # Application entrypoint
+├── internal/
+│   ├── controllers/            # HTTP handlers and routing
+│   │   ├── health_controller.go
+│   │   ├── download_controller.go
+│   │   └── router.go
+│   ├── models/                 # Domain types
+│   │   ├── request.go
+│   │   └── task.go
+│   ├── repositories/           # Data persistence layer
+│   │   ├── repository.go       # TaskRepository interface
+│   │   └── memory.go           # In-memory implementation
+│   └── services/               # Business logic
+│       └── download_service.go
+├── docs/                       # Auto-generated Swagger specs
+│   ├── swagger.json
+│   └── swagger.yaml
+└── main.go                     # Legacy wrapper (delegates to cmd/server)
+```

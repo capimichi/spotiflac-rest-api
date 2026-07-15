@@ -5,6 +5,8 @@
 *.so
 *.dylib
 spotiflac-rest-api
+spotiflac-server
+
 
 # Output
 downloads/

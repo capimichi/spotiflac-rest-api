@@ -1,0 +1,186 @@
+basePath: /
+definitions:
+  models.DownloadRequest:
+    properties:
+      album_artist:
+        type: string
+      album_name:
+        type: string
+      artist_name:
+        type: string
+      filename_format:
+        type: string
+      isrc:
+        type: string
+      output_dir:
+        type: string
+      quality:
+        type: string
+      release_date:
+        type: string
+      service:
+        type: string
+      spotify_id:
+        type: string
+      track_name:
+        type: string
+      url:
+        type: string
+    type: object
+  models.Task:
+    properties:
+      completed_tracks:
+        type: integer
+      created_at:
+        type: string
+      current_track:
+        type: string
+      downloaded_files:
+        items:
+          type: string
+        type: array
+      error:
+        type: string
+      id:
+        type: string
+      quality:
+        type: string
+      service:
+        type: string
+      spotify_url:
+        type: string
+      status:
+        $ref: '#/definitions/models.TaskStatus'
+      total_tracks:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  models.TaskStatus:
+    enum:
+    - pending
+    - resolving
+    - downloading
+    - completed
+    - failed
+    type: string
+    x-enum-varnames:
+    - StatusPending
+    - StatusResolving
+    - StatusDownloading
+    - StatusCompleted
+    - StatusFailed
+host: localhost:8080
+info:
+  contact: {}
+  description: A lightweight REST API wrapper for the SpotiFLAC backend.
+  title: SpotiFLAC REST API
+  version: "1.0"
+paths:
+  /api/download:
+    post:
+      consumes:
+      - application/json
+      description: Avvia un task di download in background e restituisce immediatamente
+        l'ID del task
+      parameters:
+      - description: Parametri di download
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.DownloadRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Contiene task_id, status e message
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Richiesta malformata
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Avvia download asincrono
+      tags:
+      - Download
+  /api/download/sync:
+    post:
+      consumes:
+      - application/json
+      description: Avvia il download e si blocca finché tutti i file non sono stati
+        scaricati e taggati
+      parameters:
+      - description: Parametri di download
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.DownloadRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Contiene status e l'elenco dei file
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Richiesta malformata
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Errore durante il download
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Avvia download sincrono
+      tags:
+      - Download
+  /api/health:
+    get:
+      description: Verifica se il server API è attivo e funzionante
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: status ok
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Health Check
+      tags:
+      - System
+  /api/status/{id}:
+    get:
+      description: Restituisce lo stato attuale di un download asincrono specificando
+        l'ID del task
+      parameters:
+      - description: ID del task
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Task'
+        "404":
+          description: Task non trovato
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Traccia lo stato del task
+      tags:
+      - Download
+swagger: "2.0"
