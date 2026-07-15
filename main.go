@@ -312,6 +312,24 @@ func executeDownload(req DownloadRequest, progress progressCallback) ([]string, 
 	isAmazon := strings.Contains(req.URL, "amazon.")
 	isQobuz := strings.Contains(req.URL, "qobuz.")
 
+	if isAmazon && strings.Contains(req.URL, "trackAsin=") {
+		parts := strings.Split(req.URL, "trackAsin=")
+		if len(parts) > 1 {
+			extractedASIN := ""
+			for _, r := range parts[1] {
+				if (r >= '0' && r <= '9') || (r >= 'A' && r <= 'Z') {
+					extractedASIN += string(r)
+				} else {
+					break
+				}
+			}
+			if len(extractedASIN) == 10 {
+				req.URL = "https://music.amazon.com/tracks/" + extractedASIN
+				fmt.Printf("Reconstructed Amazon URL to track ASIN: %s\n", req.URL)
+			}
+		}
+	}
+
 	if isTidal || isAmazon || isQobuz {
 		fmt.Printf("Direct URL detected: %s\n", req.URL)
 		var filename string
