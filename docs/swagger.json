@@ -171,40 +171,64 @@
             "type": "object",
             "properties": {
                 "album_artist": {
-                    "type": "string"
+                    "description": "Artista dell'album. Facoltativo, usato per la scrittura dei tag ID3/FLAC nei download da link diretti o ricerca ISRC.",
+                    "type": "string",
+                    "example": "Taylor Swift"
                 },
                 "album_name": {
-                    "type": "string"
+                    "description": "Nome dell'album. Facoltativo, usato per la scrittura dei tag ID3/FLAC nei download da link diretti o ricerca ISRC.",
+                    "type": "string",
+                    "example": "Reputation"
                 },
                 "artist_name": {
-                    "type": "string"
+                    "description": "Nome dell'artista principale. Obbligatorio solo se non viene fornito un URL. Nei link diretti, serve come metadato di fallback.",
+                    "type": "string",
+                    "example": "Taylor Swift"
                 },
                 "filename_format": {
-                    "type": "string"
+                    "description": "Formato di salvataggio per il nome del file. Supporta tag dinamici come {artist}, {title}, {album}. Default: \"{artist} - {title}\"",
+                    "type": "string",
+                    "example": "{artist} - {title}"
                 },
                 "isrc": {
-                    "type": "string"
+                    "description": "Codice ISRC (International Standard Recording Code) del brano. Obbligatorio solo per il download diretto tramite metadati (se non viene fornito un URL).",
+                    "type": "string",
+                    "example": "USUM71703861"
                 },
                 "output_dir": {
-                    "type": "string"
+                    "description": "Cartella sul server in cui salvare i file musicali scaricati. Default: \"./downloads\"",
+                    "type": "string",
+                    "example": "./downloads"
                 },
                 "quality": {
-                    "type": "string"
+                    "description": "Qualità del download. Per Qobuz (es. \"6\" per Hi-Res). Per Tidal/Amazon (es. \"LOSSLESS\" per qualità CD FLAC). Se omesso, viene applicato un valore predefinito ottimale.",
+                    "type": "string",
+                    "example": "6"
                 },
                 "release_date": {
-                    "type": "string"
+                    "description": "Data di pubblicazione del brano (es. YYYY-MM-DD). Facoltativo, usato per i tag ID3/FLAC.",
+                    "type": "string",
+                    "example": "2017-08-24"
                 },
                 "service": {
-                    "type": "string"
+                    "description": "Servizio di streaming musicale di destinazione da cui effettuare il download effettivo dei file.\n@Enums qobuz, tidal, amazon",
+                    "type": "string",
+                    "example": "qobuz"
                 },
                 "spotify_id": {
-                    "type": "string"
+                    "description": "ID Spotify del brano. Facoltativo, utile come riferimento per collegare l'ISRC in caso di download diretto senza URL.",
+                    "type": "string",
+                    "example": "1OCaN2Vv7f7F1QGq5Q7P9H"
                 },
                 "track_name": {
-                    "type": "string"
+                    "description": "Titolo del brano. Obbligatorio solo se non viene fornito un URL. Nei link diretti, serve come metadato di fallback.",
+                    "type": "string",
+                    "example": "Look What You Made Me Do"
                 },
                 "url": {
-                    "type": "string"
+                    "description": "URL del brano, album, playlist o artista da scaricare. Supporta link Spotify (es. https://open.spotify.com/track/...) oppure link diretti Tidal, Amazon Music o Qobuz. Obbligatorio a meno che non si specifichi la triade isrc, track_name e artist_name.",
+                    "type": "string",
+                    "example": "https://open.spotify.com/track/4PTG3Z6ehGkBFmzsOhswXP"
                 }
             }
         },

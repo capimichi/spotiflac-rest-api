@@ -3,28 +3,69 @@ definitions:
   models.DownloadRequest:
     properties:
       album_artist:
+        description: Artista dell'album. Facoltativo, usato per la scrittura dei tag
+          ID3/FLAC nei download da link diretti o ricerca ISRC.
+        example: Taylor Swift
         type: string
       album_name:
+        description: Nome dell'album. Facoltativo, usato per la scrittura dei tag
+          ID3/FLAC nei download da link diretti o ricerca ISRC.
+        example: Reputation
         type: string
       artist_name:
+        description: Nome dell'artista principale. Obbligatorio solo se non viene
+          fornito un URL. Nei link diretti, serve come metadato di fallback.
+        example: Taylor Swift
         type: string
       filename_format:
+        description: 'Formato di salvataggio per il nome del file. Supporta tag dinamici
+          come {artist}, {title}, {album}. Default: "{artist} - {title}"'
+        example: '{artist} - {title}'
         type: string
       isrc:
+        description: Codice ISRC (International Standard Recording Code) del brano.
+          Obbligatorio solo per il download diretto tramite metadati (se non viene
+          fornito un URL).
+        example: USUM71703861
         type: string
       output_dir:
+        description: 'Cartella sul server in cui salvare i file musicali scaricati.
+          Default: "./downloads"'
+        example: ./downloads
         type: string
       quality:
+        description: Qualità del download. Per Qobuz (es. "6" per Hi-Res). Per Tidal/Amazon
+          (es. "LOSSLESS" per qualità CD FLAC). Se omesso, viene applicato un valore
+          predefinito ottimale.
+        example: "6"
         type: string
       release_date:
+        description: Data di pubblicazione del brano (es. YYYY-MM-DD). Facoltativo,
+          usato per i tag ID3/FLAC.
+        example: "2017-08-24"
         type: string
       service:
+        description: |-
+          Servizio di streaming musicale di destinazione da cui effettuare il download effettivo dei file.
+          @Enums qobuz, tidal, amazon
+        example: qobuz
         type: string
       spotify_id:
+        description: ID Spotify del brano. Facoltativo, utile come riferimento per
+          collegare l'ISRC in caso di download diretto senza URL.
+        example: 1OCaN2Vv7f7F1QGq5Q7P9H
         type: string
       track_name:
+        description: Titolo del brano. Obbligatorio solo se non viene fornito un URL.
+          Nei link diretti, serve come metadato di fallback.
+        example: Look What You Made Me Do
         type: string
       url:
+        description: URL del brano, album, playlist o artista da scaricare. Supporta
+          link Spotify (es. https://open.spotify.com/track/...) oppure link diretti
+          Tidal, Amazon Music o Qobuz. Obbligatorio a meno che non si specifichi la
+          triade isrc, track_name e artist_name.
+        example: https://open.spotify.com/track/4PTG3Z6ehGkBFmzsOhswXP
         type: string
     type: object
   models.Task:
